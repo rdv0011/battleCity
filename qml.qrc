@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/board/armoredwall.png</file>
+        <file>images/board/brickwall.png</file>
+        <file>images/bullet.png</file>
+        <file>images/mybase.png</file>
+        <file>data/level1.dat</file>
+        <file>qml/ControlPanel.qml</file>
+        <file>qml/Tile.qml</file>
+        <file>images/board/empty_traversable.png</file>
+        <file>images/enemytank.png</file>
+        <file>images/explosion.png</file>
+        <file>images/mytank.png</file>
+        <file>qml/UserBase.qml</file>
+        <file>qml/UserTank.qml</file>
+        <file>qml/EnemyTank.qml</file>
+        <file>qml/Projectile.qml</file>
+        <file>qml/main.qml</file>
+        <file>qml/MainForm.ui.qml</file>
+        <file>images/frag_icon.png</file>
+        <file>qml/EnemyFrag.qml</file>
+    </qresource>
+</RCC>
