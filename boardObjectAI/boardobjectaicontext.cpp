@@ -39,6 +39,24 @@ void BoardObjectAIContext::objectHitByObject(QString objectId, QString byObjectI
     }
 }
 
+void BoardObjectAIContext::objectDidCreate(QString objectId,
+                                               AnimatedBoardObject::ObjectType type) {
+    for(auto strategy: _strategies) {
+        if (dynamic_cast<TankAIStrategy*>(strategy)) {
+            strategy->objectTypeDidCreate(objectId, type);
+        }
+    }
+}
+
+void BoardObjectAIContext::objectDidRemove(QString objectId,
+                                               AnimatedBoardObject::ObjectType type) {
+    for(auto strategy: _strategies) {
+        if (dynamic_cast<TankAIStrategy*>(strategy)) {
+            strategy->objectTypeDidRemove(objectId, type);
+        }
+    }
+}
+
 void BoardObjectAIContext::advance() {
     for(auto strategy: _strategies) {
         strategy->advance();

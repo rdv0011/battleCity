@@ -1,11 +1,10 @@
 #include "boardobject.h"
-#include "gameboard.h"
 
 BoardObject::BoardObject(QObject *parent) : QObject(parent),
     _rotation(0), _isVisible(true) {
 }
 
-const QString BoardObject::getObjectImagePath() {
+QString BoardObject::getObjectImagePath() const {
     return this->_objectImagePath;
 }
 
@@ -13,7 +12,7 @@ void BoardObject::setObjectImagePath(const QString& path) {
     this->_objectImagePath = path;
 }
 
-int BoardObject::getPositionX() {
+int BoardObject::getPositionX() const {
     return this->_positionX;
 }
 
@@ -21,7 +20,7 @@ void BoardObject::setPositionX(int x) {
     this->_positionX = x;
 }
 
-int BoardObject::getPositionY() {
+int BoardObject::getPositionY() const {
     return this->_positionY;
 }
 
@@ -29,7 +28,7 @@ void BoardObject::setPositionY(int y) {
     this->_positionY = y;
 }
 
-int BoardObject::getRotation() {
+int BoardObject::getRotation() const {
     return this->_rotation;
 }
 
@@ -37,32 +36,18 @@ void BoardObject::setRotation(int rotation) {
     this->_rotation = rotation;
 }
 
-const int BoardObject::getWidth() {
+int BoardObject::getWidth() const {
     return BoardObject::defaultWidth;
 }
 
-const int BoardObject::getHeight() {
+int BoardObject::getHeight() const {
     return BoardObject::defaultHeight;
-}
-
-void BoardObject::setVisible(bool visible) {
-    this->_isVisible = visible;
-}
-
-bool BoardObject::getVisible() const {
-    return this->_isVisible;
 }
 
 BoardObject* BoardObject::constructByChar(QObject *parent, char dataChar, unsigned int position) {
     BoardObject* object = constructByCharImpl(parent, dataChar, position);
     if (!object && this->_nextObject) {
         return this->_nextObject->constructByChar(parent, dataChar, position);
-    }
-    else if (object) {
-        GameBoard *board = GameBoard::sharedInstance();
-        board->getViewPositionByBoardPostion(position,
-                                             object->_positionX,
-                                             object->_positionY);
     }
     return object;
 }
@@ -88,5 +73,8 @@ void BoardObject::updatePositionAndRotation(int positionX,
 
 BoardObject* BoardObject::constructByCharImpl(QObject *parent, char dataChar,
                                               unsigned int position) {
+    Q_UNUSED(parent)
+    Q_UNUSED(dataChar)
+    Q_UNUSED(position)
     return nullptr;
 }

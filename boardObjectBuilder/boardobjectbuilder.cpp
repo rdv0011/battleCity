@@ -6,19 +6,21 @@
 #include <QtDebug>
 
 BoardObjectBuilder::BoardObjectBuilder(QObject *parent,
-                                       BoardObjectBuilderStrategy* strategy) : QObject(parent),
+                                       BoardObjectBuilderStrategy* strategy, GameBoard* board) : QObject(parent),
 builderStrategy(strategy) {
     // Create instance of building strategy
     if (!builderStrategy) {
-        builderStrategy = new BoardObjectBuilderStrategyEasy(this);
+        builderStrategy = new BoardObjectBuilderStrategyEasy(this, board);
     }
     // Build the chain of different game objects
-    AnimatedBoardObject* animatedObject = new AnimatedBoardObject(builderStrategy);
-    animatedObject->setNext(new Tile(builderStrategy));
+    AnimatedBoardObject* animatedObject = new AnimatedBoardObject(this);
+    animatedObject->setNext(new Tile(this));
     builderStrategy->setChainOfObjects(animatedObject);
 }
 
-QList<BoardObject*> BoardObjectBuilder::createStage(QObject *parent, unsigned int stageNumer) {
+QList<BoardObject*> BoardObjectBuilder::createStageObjects(QObject *parent,
+                                                           unsigned int stageNumer,
+                                                           QList<int>& respawnPositions) {
     QList<BoardObject*> boardObjects;
     // Open the map file
     QFile mapFile(QString(":/data/level%1.dat").arg(stageNumer));
@@ -29,7 +31,7 @@ QList<BoardObject*> BoardObjectBuilder::createStage(QObject *parent, unsigned in
     }
     QTextStream textStream(&mapFile);
     if (builderStrategy) {
-        boardObjects = builderStrategy->createStage(parent, textStream);
+        boardObjects = builderStrategy->createStageObjects(parent, textStream, respawnPositions);
     }
     mapFile.close();
     return boardObjects;

@@ -2,21 +2,22 @@
 
 Tile::Tile(QObject *parent, int rotation, bool traversible, TileType tileType) :
     BoardObject(parent),
-    traversible(traversible),
-    tileType(tileType) {
+    _traversible(traversible),
+    _tileType(tileType) {
+    setRotation(rotation);
 }
 
-const bool Tile::isTraversible() {
-    return this->traversible;
+bool Tile::isTraversible() const{
+    return this->_traversible;
 }
 
-const Tile::TileType Tile::getTileType() {
-    return this->tileType;
+Tile::TileType Tile::getTileType() const {
+    return this->_tileType;
 }
 
-const QString Tile::getObjectImagePath() {
+QString Tile::getObjectImagePath() const {
     QString tileName = "";
-    switch (this->tileType) {
+    switch (this->_tileType) {
     case BRICKWALL:
         tileName = "brickwall";
         break;
@@ -32,6 +33,7 @@ const QString Tile::getObjectImagePath() {
 }
 
 BoardObject* Tile::constructByCharImpl(QObject *parent, char dataChar, unsigned int position) {
+    Q_UNUSED(position)
     switch(dataChar) {
     case 'W':
         // Brick wall

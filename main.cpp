@@ -15,7 +15,6 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
     GameController *game = new GameController(&app);
-    game->initWithStage(1);
 
     qmlRegisterType<Tile>();
     qmlRegisterType<AnimatedBoardObject>();

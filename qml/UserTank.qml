@@ -49,6 +49,7 @@ Item {
 
     Keys.onReleased: {
         modelData.movingDirection = "None"
+        modelData.controlKeyPressed = Qt.Key_unknown
         userTankSprite.paused = true;
         event.accepted = true;
     }

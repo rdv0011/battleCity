@@ -19,5 +19,10 @@
         <file>qml/MainForm.ui.qml</file>
         <file>images/frag_icon.png</file>
         <file>qml/EnemyFrag.qml</file>
+        <file>qml/Explosion.qml</file>
+        <file>sounds/explosion.wav</file>
+        <file>sounds/shot.wav</file>
+        <file>sounds/userMoving.wav</file>
+        <file>images/flag.png</file>
     </qresource>
 </RCC>

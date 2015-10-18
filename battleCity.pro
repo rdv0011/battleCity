@@ -1,23 +1,24 @@
 TEMPLATE = app
 
-QT += qml quick
+QT += qml quick widgets multimedia
 CONFIG += c++11
 
 SOURCES += main.cpp \
-    boardobject.cpp \
-    tile.cpp \
-    boardobjectbuilder.cpp \
-    boardobjectbuilderstrategyeasy.cpp \
-    boardobjectbuilderstrategy.cpp \
+    boardObject/boardobject.cpp \
+    boardObject/tile.cpp \
+    boardObjectBuilder/boardobjectbuilder.cpp \
+    boardObjectBuilder/boardobjectbuilderstrategyeasy.cpp \
+    boardObjectBuilder/boardobjectbuilderstrategy.cpp \
     gameboard.cpp \
-    animatedboardobject.cpp \
-    boardobjectaistrategy.cpp \
-    projectileaistrategy.cpp \
-    userbaseaistrategy.cpp \
-    tankaistrategy.cpp \
-    boardobjectaicontext.cpp \
+    boardObject/animatedboardobject.cpp \
+    boardObjectAI/boardobjectaistrategy.cpp \
+    boardObjectAI/projectileaistrategy.cpp \
+    boardObjectAI/userbaseaistrategy.cpp \
+    boardObjectAI/tankaistrategy.cpp \
+    boardObjectAI/boardobjectaicontext.cpp \
     stagemediator.cpp \
-    gamecontroller.cpp
+    gamecontroller.cpp \
+    utils/resourcesound.cpp
 
 RESOURCES += qml.qrc
 
@@ -28,18 +29,21 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    boardobject.h \
-    tile.h \
-    boardobjectbuilder.h \
-    boardobjectbuilderstrategy.h \
-    boardobjectbuilderstrategyeasy.h \
+    boardObject/boardobject.h \
+    boardObject/tile.h \
+    boardObjectBuilder/boardobjectbuilder.h \
+    boardObjectBuilder/boardobjectbuilderstrategy.h \
+    boardObjectBuilder/boardobjectbuilderstrategyeasy.h \
     gameboard.h \
-    animatedboardobject.h \
-    boardobjectaistrategy.h \
-    projectileaistrategy.h \
-    userbaseaistrategy.h \
-    tankaistrategy.h \
-    boardobjectaicontext.h \
+    boardObject/animatedboardobject.h \
+    boardObjectAI/boardobjectaistrategy.h \
+    boardObjectAI/projectileaistrategy.h \
+    boardObjectAI/userbaseaistrategy.h \
+    boardObjectAI/tankaistrategy.h \
+    boardObjectAI/boardobjectaicontext.h \
     stagemediator.h \
-    gamecontroller.h
+    gamecontroller.h \
+    gamecontrollerprotocol.h \
+    utils/resourcesound.h
 
+INCLUDEPATH += boardObject boardObjectAI boardObjectBuilder utils

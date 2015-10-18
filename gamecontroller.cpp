@@ -1,52 +1,98 @@
 #include <QTimer>
+#include <QMessageBox>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+
 #include "gamecontroller.h"
 #include "gameboard.h"
 #include "stagemediator.h"
-#include "tankaistrategy.h"
-#include "boardobjectaicontext.h"
-#include "projectileaistrategy.h"
-#include "userbaseaistrategy.h"
 
-GameController::GameController(QObject *parent) : QObject(parent) {
+GameController::GameController(QObject *parent) : QObject(parent),
+    _stage(nullptr), _frameTimer(nullptr) {
+
+    _stage = new StageMediator(this);
+    _stage->setGameControllerDelegate(this);
+
+    _frameTimer = new QTimer(this);
+    connect(_frameTimer, SIGNAL(timeout()), SLOT(nextFrame()));
+
+    initWithStage(1);
 }
 
 
 void GameController::initWithStage(unsigned int stageNumber) {
-    _gameBoard = GameBoard::sharedInstance(this);
-    _stage = new StageMediator(this);
-    QList<BoardObjectAIStrategy*> strategyList;
-    strategyList.append(new TankAIStrategy(this, _stage));
-    strategyList.append(new ProjectileAIStrategy(this, _stage));
-    strategyList.append(new UserBaseAIStrategy(this, _stage));
-    _contexts.append(new BoardObjectAIContext(this, strategyList, _stage));
-    _stage->setAIContexts(_contexts);
-    _stage->setGameBoard(_gameBoard);
-    _stage->setGameController(this);
-    _gameBoard->init(_stage, stageNumber);
-    _gameBoard->createFragObjectsByNumber(20);
-
-    QTimer* timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), SLOT(nextFrame()));
-    timer->start(kNextFrameTimeout);
-
-    QTimer::singleShot(0, this, SLOT(aiInit()) );
+    _stage->sendInit(stageNumber, 20, 2);
+    QList<AnimatedBoardObject*> list = _stage->getGameBoard()->getBoardObjectsWithType(AnimatedBoardObject::TYPE_USERTANK);
+    if (list.count()) {
+        AnimatedBoardObject *userObject = list.first();
+        _userRespawnPoint = QPoint(userObject->getPositionX(),
+                                   userObject->getPositionY());
+    }
+    _frameTimer->start(kNextFrameTimeout);
+    QTimer::singleShot(0, this, SLOT(initFrame()));
 }
 
 GameBoard* GameController::getGameBoard() const {
-    return this->_gameBoard;
+    return _stage->getGameBoard();
 }
 
 void GameController::nextFrame() {
-    for(auto context : _contexts) {
-        context->advance();
-    }
+    _stage->nextFrame();
 }
 
-void GameController::aiInit() {
-    for(auto context : _contexts) {
-        context->init();
-    }
+void GameController::initFrame() {
+    _stage->initFrame();
 }
 
-void GameController::objectWillRemove(QString objectId) {
+// GameControllerProtocol
+void GameController::objectDidCreate(QString objectId, AnimatedBoardObject::ObjectType type) {
+    Q_UNUSED(objectId)
+    Q_UNUSED(type)
+}
+
+void GameController::objectDidRemove(QString objectId, AnimatedBoardObject::ObjectType type) {
+
+    Q_UNUSED(objectId)
+
+    // End game cases handler
+    GameBoard* board = _stage->getGameBoard();
+    switch(type) {
+    case AnimatedBoardObject::TYPE_ENEMYTANK:
+    {
+        _stage->sendAddOneFrag("");
+        if (board->getMaxFragsCount() > board->getFragsCount()) {
+            QList<QString> list = board->getObjectIdsByType(AnimatedBoardObject::TYPE_ENEMYTANK);
+            if (list.count() < board->getRespawnPointsView().count()) {
+                QList<QPoint*> respawnPoints = board->getRespawnPointsView();
+                if (respawnPoints.count()) {
+                    int randomIndex = qrand() % respawnPoints.count();
+                    QPoint *pt = respawnPoints[randomIndex];
+                    _stage->sendCreateAnimatedObject(AnimatedBoardObject::TYPE_ENEMYTANK, pt->x(),
+                                                     pt->y(), 0, AnimatedBoardObject::MOVING_UP);
+                }
+            }
+        }
+        else {
+            initWithStage(1);
+        }
+    }
+        break;
+    case AnimatedBoardObject::TYPE_USERTANK:
+    {
+        _stage->sendRemoveOneLife("");
+        if (board->getLifesCount() > 0) {
+            _stage->sendCreateAnimatedObject(AnimatedBoardObject::TYPE_USERTANK, _userRespawnPoint.x(),
+                                             _userRespawnPoint.y(), 0, AnimatedBoardObject::MOVING_NONE);
+        }
+        else {
+            initWithStage(1);
+        }
+    }
+        break;
+    case AnimatedBoardObject::TYPE_USERBASE:
+        // In this case user loses and we should end game immidiately
+        break;
+    default:
+        break;
+    }
 }

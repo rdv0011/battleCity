@@ -3,24 +3,29 @@
 
 AnimatedBoardObject::AnimatedBoardObject(QObject *parent,
                                          int rotation,
-                                         ObjectType type):BoardObject(parent),
-_objectType(type), _animationPaused(false), _movingDirection(MOVING_NONE) {
+                                         ObjectType type, StageMediator* stage):BoardObject(parent),
+_animationPaused(false), _objectType(type),
+  _movingDirection(MOVING_NONE), _stage(stage) {
     setRotation(rotation);
 }
 
-const int AnimatedBoardObject::getWidth() {
+AnimatedBoardObject::~AnimatedBoardObject() {
+
+}
+
+int AnimatedBoardObject::getWidth() const {
     return AnimatedBoardObject::objectWidth;
 }
 
-const int AnimatedBoardObject::getHeight() {
+int AnimatedBoardObject::getHeight() const {
     return AnimatedBoardObject::objectHeight;
 }
 
-const AnimatedBoardObject::ObjectType AnimatedBoardObject::getObjectType() {
+AnimatedBoardObject::ObjectType AnimatedBoardObject::getObjectType() const {
     return this->_objectType;
 }
 
-const QString AnimatedBoardObject::getObjectImagePath() {
+QString AnimatedBoardObject::getObjectImagePath() const {
     QString imageName = "";
     switch (this->_objectType) {
     case TYPE_USERBASE:
@@ -47,7 +52,10 @@ const QString AnimatedBoardObject::getObjectImagePath() {
     return "qrc:/images/" + imageName + ".png";
 }
 
-BoardObject* AnimatedBoardObject::constructByCharImpl(QObject *parent, char dataChar, unsigned int position) {
+BoardObject* AnimatedBoardObject::constructByCharImpl(QObject *parent, char dataChar,
+                                                      unsigned int position) {
+    Q_UNUSED(position)
+
     switch(dataChar) {
     case 'B':
         // User base
@@ -68,12 +76,16 @@ BoardObject* AnimatedBoardObject::constructByCharImpl(QObject *parent, char data
     }
 }
 
-const AnimatedBoardObject::MovingDirectionType AnimatedBoardObject::getMovingDirection() {
+AnimatedBoardObject::MovingDirectionType AnimatedBoardObject::getMovingDirectionType() const {
     return this->_movingDirection;
 }
 
 void AnimatedBoardObject::setMovingDirectionType(AnimatedBoardObject::MovingDirectionType movingDirection) {
     this->_movingDirection = movingDirection;
+}
+
+QString AnimatedBoardObject::getMovingDirection() const {
+    return "this->_movingDirection";
 }
 
 // When user presses key this setter is called
@@ -96,13 +108,28 @@ void AnimatedBoardObject::setMovingDirection(QString direction) {
     }
 }
 
+
+int AnimatedBoardObject::getControlKeyPressed() const {
+    return 0;
+}
+
 void AnimatedBoardObject::setControlKeyPressed(int controlKey) {
     if (_stage) {
         _stage->sendControlKeyPressed(this->getObjectId(), controlKey);
     }
 }
 
-const bool AnimatedBoardObject::getAnimationPaused() {
+QString AnimatedBoardObject::removeObject() const {
+    return "";
+}
+
+void AnimatedBoardObject::setRemoveObject(QString objectId) {
+    if (_stage) {
+        _stage->sendRemoveObject(objectId);
+    }
+}
+
+bool AnimatedBoardObject::getAnimationPaused() const {
     return this->_animationPaused;
 }
 

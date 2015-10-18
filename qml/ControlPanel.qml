@@ -45,12 +45,9 @@ Item {
                  }
              }
              Row {
-                 Text {
-                     font.family: "Helvetica"
-                     font.pointSize: 20
-                     smooth: true
-                     color: "black"
-                     text: "Flags"
+                 Image {
+                     id: glagsImage
+                     source: "qrc:/images/flag.png"
                  }
              }
              Row {
@@ -59,7 +56,7 @@ Item {
                      font.pointSize: 20
                      smooth: true
                      color: "black"
-                     text: gameBoard.flagsCount
+                     text: gameBoard.lifesCount
                  }
              }
          }

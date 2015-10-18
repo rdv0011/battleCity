@@ -1,4 +1,5 @@
 import QtQuick 2.3
+import QtQuick.Dialogs 1.1
 
 Rectangle {
     property alias mouseArea: mouseArea
@@ -41,6 +42,10 @@ Rectangle {
 		Repeater {
 			model: gameBoard.fragsLast
 			EnemyFrag {}
+		}
+		Repeater {
+			model: gameBoard.explosions
+			Explosion {}
 		}
             }
         }

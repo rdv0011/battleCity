@@ -1,7 +1,7 @@
 #include "userbaseaistrategy.h"
 #include "stagemediator.h"
 
-UserBaseAIStrategy::UserBaseAIStrategy(QObject* parent, StageMediator* stage):BoardObjectAIStrategy(parent, stage) {
+UserBaseAIStrategy::UserBaseAIStrategy(QObject* parent, StageMediator* stage, GameBoard* board):BoardObjectAIStrategy(parent, stage, board) {
 
 }
 

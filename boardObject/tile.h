@@ -3,6 +3,8 @@
 
 #include <boardobject.h>
 
+// This class declares interface for small brick of the game board.
+// Implements factory method to deserialize tile objects from game data file.
 class Tile : public BoardObject {
     Q_OBJECT
 public:
@@ -14,20 +16,23 @@ public:
         ARMOREDWALL
     };
 
+    // Constructor
     explicit Tile(QObject * = 0,
                   int = 0,
                   bool = false,
                   TileType = EMPTY);
+    // Image path
+    virtual QString getObjectImagePath() const;
 
-    virtual const QString getObjectImagePath();
-
+    // Indicates if tile is traversible by animated object
     Q_PROPERTY(bool traversible READ isTraversible CONSTANT)
     // Is traversible
-    const bool isTraversible();
+    bool isTraversible() const;
 
+    // Returns type of tile
     Q_PROPERTY(TileType tileType READ getTileType CONSTANT)
     // Tile type
-    const TileType getTileType();
+    TileType getTileType() const;
 
 protected:
     // Factory method to construct instance of Tile type
@@ -35,9 +40,9 @@ protected:
 
 private:
     // Indicates the tile is traversible or not
-    const bool traversible;
+    const bool _traversible;
     // Tile type
-    const TileType tileType;
+    const TileType _tileType;
 };
 
 #endif // TILE_H

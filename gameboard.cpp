@@ -1,4 +1,6 @@
 #include <QUuid>
+#include <QPoint>
+
 #include "gameboard.h"
 #include "boardobjectbuilder.h"
 #include "boardobjectbuilderstrategyeasy.h"
@@ -6,21 +8,26 @@
 #include "stagemediator.h"
 
 GameBoard::GameBoard(QObject *parent) : QObject(parent),
-_flagsCount(0), _maximumFragsCount(0) {
-}
-
-GameBoard* GameBoard::sharedInstance(QObject *parent) {
-    static GameBoard* _instance = nullptr;
-    if (!_instance) {
-        _instance = new GameBoard(parent);
-    }
-    return _instance;
+ _stage(nullptr), _lifesCount(0), _maximumFragsCount(0) {
 }
 
 void GameBoard::init(StageMediator* stage, unsigned int stageNumber) {
-    std::shared_ptr<BoardObjectBuilderStrategy> strategy(new BoardObjectBuilderStrategyEasy(nullptr));
-    std::shared_ptr<BoardObjectBuilder> objectBuilder(new BoardObjectBuilder(nullptr, strategy.get()));
-    _objects = objectBuilder->createStage(this, stageNumber);
+    BoardObjectBuilderStrategyEasy strategy(this, this);
+    BoardObjectBuilder objectBuilder(this, &strategy, this);
+    QList<int> respawnPositions;
+
+    clear();
+
+    _objects = objectBuilder.createStageObjects(this, stageNumber, respawnPositions);
+    qDeleteAll(_respawnPoints);
+    _respawnPoints.clear();
+    for(auto respawnPos : respawnPositions) {
+        int positionX, positionY;
+        getViewPositionByBoardPostion(respawnPos, positionX, positionY);
+        _respawnPoints.append(new QPoint(positionX, positionY));
+    }
+    _stage = stage;
+    _tiles.clear();
     for (auto object : _objects) {
         if (auto animatedObject = dynamic_cast<AnimatedBoardObject*>(object)) {
             animatedObject->setStageMediator(stage);
@@ -29,17 +36,46 @@ void GameBoard::init(StageMediator* stage, unsigned int stageNumber) {
             _tiles << tile;
         }
     }
+
+    // Lets qml know about changes
+    notifyAllAbojectsChanged();
 }
 
-int GameBoard::getColsCount() {
+void GameBoard::clear() {
+    // Wired way to reassign qml objecto to newly created c++ objects
+    QList<BoardObject*> tmp(_objects);
+    _objects.clear();
+    notifyAllAbojectsChanged();
+    qDeleteAll(tmp);
+    tmp = _frags;
+    _frags.clear();
+    emit fragsChanged(getFrags());
+    qDeleteAll(tmp);
+}
+
+GameBoard::~GameBoard() {
+    qDeleteAll(_objects);
+    _objects.clear();
+    qDeleteAll(_frags);
+    _frags.clear();
+}
+
+int GameBoard::getColsCount() const {
     return GameBoard::colsCount;
 }
 
-int GameBoard::getRowsCount() {
+int GameBoard::getRowsCount() const {
     return GameBoard::rowsCount;
 }
 
 QQmlListProperty<Tile> GameBoard::getTiles() {
+    QList<Tile*> list;
+    for (auto object : _objects) {
+        if (auto tile = dynamic_cast<Tile*>(object)) {
+            list << tile;
+        }
+    }
+    _tiles = list;
     return QQmlListProperty<Tile>(this, _tiles);
 }
 
@@ -117,7 +153,7 @@ AnimatedBoardObject::MovingDirectionType GameBoard::getObjectMovingDirectionById
     AnimatedBoardObject::MovingDirectionType movingDirection = AnimatedBoardObject::MOVING_NONE;
     AnimatedBoardObject* object = getObjectByObjectId(objectId);
     if (object) {
-        movingDirection = object->getMovingDirection();
+        movingDirection = object->getMovingDirectionType();
     }
     return movingDirection;
 }
@@ -195,18 +231,29 @@ void GameBoard::notifyObjectChanged(AnimatedBoardObject::ObjectType type) {
     }
 }
 
+void GameBoard::notifyAllAbojectsChanged() {
+    emit userBasesChanged(getUserBases());
+    emit enemyTanksChanged(getEnemyTanks());
+    emit userTanksChanged(getUserTanks());
+    emit projectilesChanged(getProjectiles());
+    emit explosionsChanged(getExplosions());
+}
+
 QString GameBoard::createAnimatedObject(AnimatedBoardObject::ObjectType type,
                                         int positionX, int positionY, int rotation,
                                         AnimatedBoardObject::MovingDirectionType movingDirection) {
     QString newObjectId;
     if (AnimatedBoardObject::TYPE_NONE != type) {
-        AnimatedBoardObject* boardObject = new AnimatedBoardObject(this, rotation, type);
+        AnimatedBoardObject* boardObject = new AnimatedBoardObject(this, rotation, type, _stage);
         newObjectId = QUuid::createUuid().toString();
         boardObject->setObjectId(newObjectId);
         boardObject->setPositionX(positionX);
         boardObject->setPositionY(positionY);
         boardObject->setMovingDirectionType(movingDirection);
         _objects.append(boardObject);
+        if (_stage) {
+            _stage->sendObjectDidCreate(newObjectId, type);
+        }
         notifyObjectChanged(type);
     }
     return newObjectId;
@@ -217,7 +264,11 @@ void GameBoard::removeObject(QString objectId) {
     if (object) {
         AnimatedBoardObject::ObjectType type = object->getObjectType();
         _objects.removeOne(object);
+        if (_stage) {
+            _stage->sendObjectDidRemove(objectId, type);
+        }
         notifyObjectChanged(type);
+        delete object;
     }
 }
 
@@ -239,19 +290,12 @@ AnimatedBoardObject::ObjectType GameBoard::getTypeByObjectId(QString objectId) c
     return type;
 }
 
-void GameBoard::setObjectVisible(QString objectId, bool visible) {
-    AnimatedBoardObject* object = getObjectByObjectId(objectId);
-    if (object) {
-        object->setVisible(visible);
-        notifyObjectChanged(object->getObjectType());
-    }
-}
-
 QQmlListProperty<BoardObject> GameBoard::getFrags() {
     return QQmlListProperty<BoardObject>(this, _frags);
 }
 
 void GameBoard::createFragObjectsByNumber(unsigned int objectsCount) {
+    qDeleteAll(_frags);
     _frags.clear();
     for(unsigned int i = 0; i < objectsCount; i++) {
         BoardObject *fragObject = new BoardObject(this);
@@ -259,6 +303,8 @@ void GameBoard::createFragObjectsByNumber(unsigned int objectsCount) {
         _frags.append(fragObject);
     }
     _maximumFragsCount = objectsCount;
+    emit fragsChanged(getFrags());
+    emit fragsCountChanged(getFragsCount());
 }
 
 unsigned int GameBoard::getFragsCount() {
@@ -269,17 +315,36 @@ unsigned int GameBoard::getMaxFragsCount() {
     return _maximumFragsCount;
 }
 
-void GameBoard::removeOneFrag() {
-    _frags.removeLast();
-    emit fragsChanged(getFrags());
-    emit fragsCountChanged(getFragsCount());
+void GameBoard::addOneFrag(const QString& userId) {
+
+    Q_UNUSED(userId)
+
+    if (_frags.count()) {
+        _frags.removeLast();
+        emit fragsChanged(getFrags());
+        emit fragsCountChanged(getFragsCount());
+    }
 }
 
-unsigned int GameBoard::getFlagsCount() {
-    return _flagsCount;
+void GameBoard::setLifesCount(unsigned int lifesCount) {
+    this->_lifesCount = lifesCount;
+    emit lifesCountChanged(_lifesCount);
 }
 
-void GameBoard::addOneFlag() {
-    _flagsCount++;
-    emit flagsCountChanged(_flagsCount);
+unsigned int GameBoard::getLifesCount() {
+    return _lifesCount;
+}
+
+void GameBoard::removeOneLife(const QString& userId) {
+
+    Q_UNUSED(userId)
+
+    if (_lifesCount > 0) {
+        _lifesCount--;
+        emit lifesCountChanged(_lifesCount);
+    }
+}
+
+QList<QPoint*> GameBoard::getRespawnPointsView() const {
+    return _respawnPoints;
 }

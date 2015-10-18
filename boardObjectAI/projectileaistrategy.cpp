@@ -2,16 +2,16 @@
 #include "stagemediator.h"
 #include "gameboard.h"
 
-ProjectileAIStrategy::ProjectileAIStrategy(QObject* parent, StageMediator* stage):BoardObjectAIStrategy(parent, stage) {
+ProjectileAIStrategy::ProjectileAIStrategy(QObject* parent, StageMediator* stage,
+                                           GameBoard* board):BoardObjectAIStrategy(parent, stage, board) {
 
 }
 
 void ProjectileAIStrategy::objectFired(QString objectId) {
-    GameBoard *board = GameBoard::sharedInstance();
     int positionX, positionY, rotation;
-    board->getObjectPositionAndRotationById(objectId, positionX, positionY, rotation);
+    _board->getObjectPositionAndRotationById(objectId, positionX, positionY, rotation);
     int objectWidth, objectHeight;
-    board->getObjectSizeById(objectId, objectWidth, objectHeight);
+    _board->getObjectSizeById(objectId, objectWidth, objectHeight);
     AnimatedBoardObject::MovingDirectionType movingDirection = getMovingDirectionByRotation(rotation);
     switch(movingDirection) {
     case AnimatedBoardObject::MOVING_UP:
@@ -35,11 +35,11 @@ void ProjectileAIStrategy::objectFired(QString objectId) {
     }
 
     int boardWidth, boardHeight;
-    board->getSizeOfBoardInPixels(boardWidth, boardHeight);
+    _board->getSizeOfBoardInPixels(boardWidth, boardHeight);
     if (positionX >= 0 && positionX <= boardWidth &&
             positionY >= 0 && positionY <= boardHeight &&
-        board->isTileTraversibleWithCoortinates(positionX, positionY)) {
-        board->createAnimatedObject(AnimatedBoardObject::TYPE_PROJECTILE, positionX,
+        _board->isTileTraversibleWithCoortinates(positionX, positionY)) {
+        _stage->sendCreateAnimatedObject(AnimatedBoardObject::TYPE_PROJECTILE, positionX,
                                 positionY, rotation, movingDirection);
     }
 }
@@ -49,20 +49,22 @@ void ProjectileAIStrategy::init() {
 }
 
 void ProjectileAIStrategy::advance() {
-    GameBoard *board = GameBoard::sharedInstance();
-    QList<QString> list = board->getObjectIdsByType(AnimatedBoardObject::TYPE_PROJECTILE);
+    QList<QString> list = _board->getObjectIdsByType(AnimatedBoardObject::TYPE_PROJECTILE);
     for(auto projectileObjectId : list) {
         AnimatedBoardObject::MovingDirectionType movingDirection =
-                board->getObjectMovingDirectionById(projectileObjectId);
+                _board->getObjectMovingDirectionById(projectileObjectId);
         bool isHitWall = moveToDirection(projectileObjectId, movingDirection);
         if (isHitWall) {
-            board->removeObject(projectileObjectId);
+            _stage->sendRemoveObject(projectileObjectId);
         }
         else {
             QString objectId = getObjectIdHitOther(projectileObjectId, kStrikingArea * 2);
-            if (objectId.length()) {
+            AnimatedBoardObject::ObjectType type = _board->getTypeByObjectId(objectId);
+            // Projectile should not hit another one
+            if (objectId.length() &&
+                    type != AnimatedBoardObject::TYPE_PROJECTILE) {
                 _stage->sendHitObject(projectileObjectId, objectId);
-                board->removeObject(projectileObjectId);
+                _stage->sendRemoveObject(projectileObjectId);
             }
         }
     }

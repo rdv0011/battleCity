@@ -4,18 +4,16 @@
 #include "boardobjectaistrategy.h"
 
 class StageMediator;
+// This class declares interface for concrete strategy to control the user base.
 class UserBaseAIStrategy : public BoardObjectAIStrategy {
     Q_OBJECT
 public:
-    UserBaseAIStrategy(QObject* parent, StageMediator* stage);
-
+    // Constructor
+    UserBaseAIStrategy(QObject* parent, StageMediator* stage, GameBoard*);
+    // Initialization
     virtual void init();
-
+    // Iteration of game loop
     virtual void advance();
-
-signals:
-
-public slots:
 };
 
 #endif // USERBASEAISTRATEGY_H
