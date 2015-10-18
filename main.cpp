@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QtQml>
+
 #include "gamecontroller.h"
 #include "gameboard.h"
 #include "tile.h"
@@ -14,16 +15,26 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    GameController *game = new GameController(&app);
+    int retCode = 0;
 
-    qmlRegisterType<Tile>();
-    qmlRegisterType<AnimatedBoardObject>();
-    qmlRegisterType<BoardObject>();
+    try {
+        GameController *game = new GameController(&app);
 
-    GameBoard* gameBoard = game->getGameBoard();
-    engine.rootContext()->setContextProperty("gameBoard", gameBoard);
+        qmlRegisterType<Tile>();
+        qmlRegisterType<AnimatedBoardObject>();
+        qmlRegisterType<BoardObject>();
 
-    engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+        GameBoard* gameBoard = game->getGameBoard();
+        engine.rootContext()->setContextProperty("gameBoard", gameBoard);
 
-    return app.exec();
+        engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+
+        retCode = app.exec();
+    }
+    catch(const std::bad_alloc&) {
+        // There is no references to external resources yet, so show message and exit
+        qDebug("Not enough memory!");
+    }
+
+    return retCode;
 }

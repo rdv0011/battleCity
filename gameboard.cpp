@@ -1,5 +1,6 @@
 #include <QUuid>
 #include <QPoint>
+#include <QDebug>
 
 #include "gameboard.h"
 #include "boardobjectbuilder.h"
@@ -244,17 +245,21 @@ QString GameBoard::createAnimatedObject(AnimatedBoardObject::ObjectType type,
                                         AnimatedBoardObject::MovingDirectionType movingDirection) {
     QString newObjectId;
     if (AnimatedBoardObject::TYPE_NONE != type) {
-        AnimatedBoardObject* boardObject = new AnimatedBoardObject(this, rotation, type, _stage);
-        newObjectId = QUuid::createUuid().toString();
-        boardObject->setObjectId(newObjectId);
-        boardObject->setPositionX(positionX);
-        boardObject->setPositionY(positionY);
-        boardObject->setMovingDirectionType(movingDirection);
-        _objects.append(boardObject);
-        if (_stage) {
-            _stage->sendObjectDidCreate(newObjectId, type);
+        if (auto boardObject = new AnimatedBoardObject(this, rotation, type, _stage)) {
+            newObjectId = QUuid::createUuid().toString();
+            boardObject->setObjectId(newObjectId);
+            boardObject->setPositionX(positionX);
+            boardObject->setPositionY(positionY);
+            boardObject->setMovingDirectionType(movingDirection);
+            _objects.append(boardObject);
+            if (_stage) {
+                _stage->sendObjectDidCreate(newObjectId, type);
+            }
+            notifyObjectChanged(type);
         }
-        notifyObjectChanged(type);
+        else {
+            qDebug().nospace() << qPrintable(QString("Object with type %1 creation failed!").arg(type));
+        }
     }
     return newObjectId;
 }
@@ -298,9 +303,10 @@ void GameBoard::createFragObjectsByNumber(unsigned int objectsCount) {
     qDeleteAll(_frags);
     _frags.clear();
     for(unsigned int i = 0; i < objectsCount; i++) {
-        BoardObject *fragObject = new BoardObject(this);
-        fragObject->setObjectImagePath("qrc:/images/frag_icon.png");
-        _frags.append(fragObject);
+        if (auto fragObject = new BoardObject(this)) {
+            fragObject->setObjectImagePath("qrc:/images/frag_icon.png");
+            _frags.append(fragObject);
+        }
     }
     _maximumFragsCount = objectsCount;
     emit fragsChanged(getFrags());

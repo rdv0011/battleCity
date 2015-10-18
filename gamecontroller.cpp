@@ -11,17 +11,20 @@ GameController::GameController(QObject *parent) : QObject(parent),
     _stage(nullptr), _frameTimer(nullptr) {
 
     _stage = new StageMediator(this);
-    _stage->setGameControllerDelegate(this);
-
-    _frameTimer = new QTimer(this);
-    connect(_frameTimer, SIGNAL(timeout()), SLOT(nextFrame()));
-
-    initWithStage(1);
+    if (_stage) {
+        _stage->setGameControllerDelegate(this);
+        _frameTimer = new QTimer(this);
+        if (_frameTimer) {
+            connect(_frameTimer, SIGNAL(timeout()), SLOT(nextFrame()));
+            initWithStage(1);
+        }
+    }
 }
 
 
 void GameController::initWithStage(unsigned int stageNumber) {
     _stage->sendInit(stageNumber, 20, 2);
+
     QList<AnimatedBoardObject*> list = _stage->getGameBoard()->getBoardObjectsWithType(AnimatedBoardObject::TYPE_USERTANK);
     if (list.count()) {
         AnimatedBoardObject *userObject = list.first();

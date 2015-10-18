@@ -9,10 +9,24 @@
 StageMediator::StageMediator(QObject *parent) : QObject(parent) {
     _board = new GameBoard(this);
     QList<BoardObjectAIStrategy*> strategyList;
-    strategyList.append(new TankAIStrategy(this, this, _board));
-    strategyList.append(new ProjectileAIStrategy(this, this, _board));
-    strategyList.append(new UserBaseAIStrategy(this, this, _board));
-    _contexts.append(new BoardObjectAIContext(this, strategyList, this));
+    try {
+        if (auto strategy = new TankAIStrategy(this, this, _board)) {
+            strategyList.append(strategy);
+        }
+        if (auto strategy = new ProjectileAIStrategy(this, this, _board)) {
+            strategyList.append(strategy);
+        }
+        if (auto strategy = new UserBaseAIStrategy(this, this, _board)) {
+            strategyList.append(strategy);
+        }
+        if (auto context = new BoardObjectAIContext(this, strategyList, this)) {
+            _contexts.append(context);
+        }
+    }
+    catch(std::bad_alloc&) {
+        qDebug("Not enough memory!");
+        throw;
+    }
 }
 
 StageMediator::~StageMediator() {
